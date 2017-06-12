@@ -1,0 +1,419 @@
+package ir_project2;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.lang.Object;
+import java.nio.charset.Charset;
+import java.text.Collator;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
+
+
+
+public class Ir_project2
+{
+static String[]words;// array to store terms
+static HashMap<String,LinkedList> hm = new HashMap<String, LinkedList>();// creation of hashmap
+ static String path,input,output;
+
+    public static void main(String[] args) throws IOException
+    {    
+        path=args[0];
+        output=args[1];
+        input=args[2];
+        
+          FileReader fis = new FileReader(input);// reading input file
+          Scanner sc = new Scanner(fis);
+     PrintWriter out = new PrintWriter(new FileWriter(output)); 
+        
+     
+       
+        String []language= new String[]{"text_nl", "text_fr", "text_de", "text_ja", "text_ru", "text_pt", "text_es","text_es", "text_it", "text_da", "text_no", "text_sv"}; // array storing names of language field
+        FileSystem f;
+        f = FileSystems.getDefault();
+        try
+        {
+        Directory index= FSDirectory.open(f.getPath(path,new String[0]));
+        IndexReader indexreader= DirectoryReader.open(index);
+               
+        MultiFields multifields = null;
+        Fields fields = MultiFields.getFields(indexreader);
+        for (int i=0; i<12; i++)  // loop to iterate through all given languages
+        {
+        Terms term_test = fields.terms(language[i]);
+         TermsEnum term = term_test.iterator();
+         
+       BytesRef x;
+       while((x = term.next())!=null)
+                
+       {
+         
+      PostingsEnum postings= multifields.getTermDocsEnum(indexreader,language[i],x,PostingsEnum.FREQS);
+     
+      LinkedList<Integer> linkedlist = new LinkedList<Integer>();
+     
+            int j;
+            while((j = postings.nextDoc())!= PostingsEnum.NO_MORE_DOCS) // loop until no more documents are there in the posting
+            {
+                linkedlist.add(j); //
+             }// end of first while
+            hm.put(x.utf8ToString(),linkedlist);// storing the term and its posting in hashmap
+            
+          
+         }//end of second while
+      
+        }//end of for
+       
+ String l;
+  
+  while(sc.hasNextLine()){ //loop until the last line of given input file
+    l=sc.nextLine();  
+    String[] words = l.split(" "); // storing the terms received seperately in an array
+   
+   
+    GetPostings(words, out); 
+    TaatAnd(words,out);
+    TaatOr(words,out);
+    daatAnd(words,out);
+    daatOr(words,out);
+       }  //end of while  
+     }// end of try block
+    
+        catch(Exception e)
+                {
+                       e.printStackTrace();
+                       System.out.println("The exception caught is :" + e);
+                }
+        out.close();// closing of out
+    }// end of main
+    
+  static  void GetPostings(String words[], PrintWriter out) throws IOException
+    {
+        LinkedList<Integer> temp = new LinkedList<Integer>(); //creating a temporary linklist
+          
+          for(int b=0;b< words.length; b++)// loop till number of terms in the array word
+        { 
+            out.println("GetPostings");
+
+               out.println(words[b]);  // printing the word
+               out.print("Postings List: ");
+               temp=hm.get(words[b]); //storing the posting of term in linked list remp
+               String s = temp.toString();
+               out.println((s.substring(1, s.length()-1)).replace(",", " ")); // to remove brackets and commas while displaying link list
+        }   //end of for
+      }  
+static void daatAnd(String []words, PrintWriter out) throws IOException
+ {
+     int compare=0;// variable to store number of comparisions
+     int flag=0;
+     int len=words.length; // stores the number of terms 
+     int pointer[]= new int[len]; // array of pointers declared
+     for(int i=0;i<len;i++)
+          {
+         pointer[i]=0; // initiallizing the value of all pointers to 0
+     }
+     LinkedList<Integer> temp= new LinkedList<Integer>(); // creation of temp link list
+     LinkedList<Integer> daatAnd[]= new LinkedList[len]; // creating an array of link list to store posting list of all terms
+     for(int i=0;i<len;i++){
+         daatAnd[i]=hm.get(words[i]); // storing all posting of terms in array of link list
+     }
+      for(;;)
+      {
+          int least=50000; // initiallizing a value greater than number of documents
+          for(int i=0; i<len;i++)
+              
+          {
+              if(pointer[i]>= daatAnd[i].size()) // checking whether if a posting list has been traversed 
+              {
+                  flag=1;
+                  break;
+              }
+              if(daatAnd[i].get(pointer[i])<least) // checking whether there is a doc id less tha the minimum value
+              {
+                  least=daatAnd[i].get(pointer[i]); //storing the smaller value in least
+              }
+              if(daatAnd[i]==null) //if there is a term with no posting
+              {
+                  flag=1;
+                  break;
+              }
+              
+          }
+           if(flag==1)
+           {
+               break; // break out of infinite loop
+               
+           }
+           int counter=0;
+           for (int i=0;i<len;i++)
+           {
+            
+            if(daatAnd[i].get(pointer[i])==least) // if there is a document if with the same value as least
+            {
+                counter++;// incrementing counter
+                pointer[i]++; // incrementing pointer
+                compare++; // incrementing compare as one comparision has taken place
+            }
+           }
+           if(counter==len) // checking if the min valuedocument occurred in all the posting list
+            {
+              temp.add(least);  // add the document id to a temp link list
+            }
+      }//end of infinite loop
+      out.println("DaatAnd");
+      for(int i=0;i<len;i++)
+             {
+        out.print(words[i] + " ");
+             }
+         out.println();
+      out.print( "Results: ");
+      String s = temp.toString();
+out.println((s.substring(1, s.length()-1)).replace(",", " "));// removal of [] and commas while displaying link list
+      out.println("Number of documents in results : " + temp.size());
+      out.println("Number of comparision: " + compare);
+ }
+ 
+ 
+    
+    
+static void TaatOr(String []words, PrintWriter out) throws IOException
+  {
+      
+      
+      int len= words.length; // storing the number of terms in len
+     
+      LinkedList<Integer> [] taatOr = new LinkedList[len]; //creation of array of link list
+      int i=0;
+       while(i<len)
+      {
+         taatOr[i] = hm.get(words[i]); // storing posting list of all terms in array of link list
+         i++;
+      }
+          int comp=0;// variable to check no of comparison
+      for (int j=0;j<len-1;j++)
+      {
+      LinkedList<Integer> temp = new LinkedList<Integer>(); // creation of temp link list
+          int pointer1=0; int pointer2=0; // pointer 1 keeps track of taatOr[j] and pointer 2keeps track of taatOr[j+1]
+             while(pointer1<taatOr[j].size() && pointer2<taatOr[j+1].size())
+             { 
+                 comp++;// increment as comparision is taking place
+                 if (taatOr[j].get(pointer1) < taatOr[j+1].get(pointer2))// if doc id in taatOr[j] is smaller than in taatOr[j+1]
+                 {
+                     temp.add(taatOr[j].get(pointer1)); 
+                     pointer1++; //increment pointer of taatOr[j]
+                 } 
+                 else if (taatOr[j].get(pointer1).equals(taatOr[j+1].get(pointer2)))// if doc id is same in both
+                 {
+                      temp.add(taatOr[j].get(pointer1));
+                      pointer1++;
+                      pointer2++;
+                 }
+                 else  
+                 {
+                    temp.add(taatOr[j+1].get(pointer2));// if doc id in taatOr[j+1] is smaller
+                     pointer2++; 
+                 }
+                 
+             }
+             while(pointer2<taatOr[j+1].size())// if there are remaining elements in taatOr[j+1]
+             {
+               temp.add(taatOr[j+1].get(pointer2));
+                     pointer2++;  
+             }
+             
+             while(pointer1<taatOr[j].size())// if there are remaining ids in in taatOr[j]
+             {
+               temp.add(taatOr[j].get(pointer1));
+                     pointer1++;  
+             }
+              
+              taatOr[j+1]=temp; // storing the combined list of taatOr[j] and taatOr[j+1] in taatOr[j+1]
+         }//for
+      
+      
+         out.println("TaatOr");
+         for(int k=0;k<len;k++)
+             {
+        out.print(words[k] + " ");
+             }
+         out.println();
+        out.print("Results: " );
+        String s = taatOr[len-1].toString();
+
+out.println((s.substring(1, s.length()-1)).replace(",", " "));
+       out.println("Number of documents in result :" + taatOr[len-1].size());
+        out.println("Number of comparisions :" + comp);
+       
+         
+      
+  }
+ 
+ static void TaatAnd( String []words, PrintWriter out) throws IOException
+ {
+     
+      int len= words.length;
+          
+      LinkedList<Integer> [] taatAnd = new LinkedList[len];
+      int t=0;
+      while(t<len)
+      {
+         taatAnd[t] = hm.get(words[t]); //storing the posting of all terms in array of link list
+         t++;
+      }
+         int comp=0; // varaible to store number of comparision
+      for (int i=0;i<len-1;i++)
+      {
+      LinkedList<Integer> temp = new LinkedList<Integer>();
+          int pointer1=0; int pointer2=0; //pointer 1 keeps track of taatOr[j] and pointer 2keeps track of taatOr[j+1]
+             while(pointer1<taatAnd[i].size() && pointer2<taatAnd[i+1].size()) // until both list have not been traversed
+             {
+                 if (taatAnd[i].get(pointer1).equals(taatAnd[i+1].get(pointer2))) // if sam value is there in both taatAnd[i] and taatAnd[i+1]
+                 {
+                 comp++;
+                      temp.add(taatAnd[i].get(pointer1)); 
+                      pointer1++;
+                      pointer2++;
+                 }
+                 else if (taatAnd[i].get(pointer1) < taatAnd[i+1].get(pointer2)) //if value in taatAnd[i] is smaller
+                 {
+                    
+                 comp++;
+                     pointer1++;
+                 }
+                 else // if value in taatAnd[i+1] is smaller
+                 {
+                    
+                 comp++;
+                     pointer2++; 
+                 }
+             }
+             
+             
+              taatAnd[i+1]=temp;// storing the combined list of taatAnd[i] and taatAnd[i+1] in taatAnd[i+1]
+         }//for
+      
+      
+         out.println("TaatAnd");
+        for(int i=0;i<len;i++)
+             {
+        out.print(words[i] + " ");
+             }
+         out.println();
+        out.print("Results : ");
+        String s = taatAnd[len-1].toString();
+
+out.println((s.substring(1, s.length()-1)).replace(",", " "));
+        out.println("Number of documents in result :" + taatAnd[len-1].size());
+        
+        out.println("Number of comparisions :" + comp );
+   }
+ static void daatOr(String []words, PrintWriter out) throws IOException
+ {
+     int compare=0;// to check for number of comparision
+     int flag=0;
+     int len=words.length; // storing number if terms in len
+     int pointer[]= new int[len];
+     for(int i=0;i<len;i++)
+          {
+         pointer[i]=0; //initiallizing all pointer to 0
+     }
+     LinkedList<Integer> temp= new LinkedList<Integer>(); // creation of temp linklist
+     LinkedList<Integer> daatAnd[]= new LinkedList[len]; // creation on array of link list
+     for(int i=0;i<len;i++){
+         daatAnd[i]=hm.get(words[i]); // storing posting of all terms in daatAnd[i]
+     }
+      for(;;)
+      {
+        
+               int counter=0;
+               int least=50000; //initiallizing value of min with a value greater than number of docs
+          for(int i=0; i<len;i++)
+              
+          {
+              if(!(pointer[i]>= daatAnd[i].size()))
+              {
+                  if(daatAnd[i].get(pointer[i])<least) // if doc id is less than minimum value
+                  {
+                    least=daatAnd[i].get(pointer[i]);
+                  }
+              }
+              else
+              {
+                    counter++;
+              }            
+              
+          }
+           
+           if(counter==len)
+           {
+               break;  // checking if end of all posting list has been reached then move out of the infinite loop
+           }
+           for (int i=0;i<len;i++)
+           {
+            
+               if(!(pointer[i]>= daatAnd[i].size())){
+                   compare++;
+            if(daatAnd[i].get(pointer[i])==least) //if doc id is equal to least value
+            {
+               
+                pointer[i]++;
+                compare++;
+            }
+               }
+           }
+           temp.add(least);
+
+      }//end of infinite loop
+
+       
+       out.println("DaatOr");
+      for(int k=0;k<len;k++)
+        {
+           out.print(words[k] + " ");
+        }
+      out.println();
+      out.print( "Results: ");
+      String s = temp.toString();
+      out.println((s.substring(1, s.length()-1)).replace(",", " "));
+      out.println("Number of documents in results : "+ temp.size());
+      out.println("Number of comparision" + compare);    
+}  
+
+ 
+
+}// end of class
+
+             
+  
+    
+
+    
+    
+
+

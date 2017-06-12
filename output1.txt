@@ -1,0 +1,55 @@
+GetPostings
+abiert
+Postings List: 45233  45241  45243  45245  45248  45252  45255  45266
+GetPostings
+alcist
+Postings List: 45233  45246  45256
+TaatAnd
+abiert alcist 
+Results : 45233
+Number of documents in result :1
+Number of comparisions :9
+TaatOr
+abiert alcist 
+Results: 45233  45241  45243  45245  45246  45248  45252  45255  45256  45266
+Number of documents in result :10
+Number of comparisions :9
+DaatAnd
+abiert alcist 
+Results: 45233
+Number of documents in results : 1
+Number of comparision: 10
+DaatOr
+abiert alcist 
+Results: 45233  45241  45243  45245  45246  45248  45252  45255  45256  45266
+Number of documents in results : 10
+Number of comparision30
+GetPostings
+afgiv
+Postings List: 8
+GetPostings
+aufbau
+Postings List: 31813  32092
+GetPostings
+adspurg
+Postings List: 7  8
+TaatAnd
+afgiv aufbau adspurg 
+Results : 
+Number of documents in result :0
+Number of comparisions :1
+TaatOr
+afgiv aufbau adspurg 
+Results: 7  8  31813  32092
+Number of documents in result :4
+Number of comparisions :3
+DaatAnd
+afgiv aufbau adspurg 
+Results: 
+Number of documents in results : 0
+Number of comparision: 3
+DaatOr
+afgiv aufbau adspurg 
+Results: 7  8  31813  32092
+Number of documents in results : 4
+Number of comparision13
